@@ -404,7 +404,7 @@ class SMTP(asyncio.StreamReaderProtocol):
         }
         for m in (auth_exclude_mechanism or []):
             self._auth_methods.pop(m, None)
-        log.info(
+        log.debug(
             "Available AUTH mechanisms: "
             + " ".join(
                 m + "(builtin)" if impl.is_builtin else m
@@ -516,13 +516,13 @@ class SMTP(asyncio.StreamReaderProtocol):
         else:
             super().connection_made(transport)
             self.transport = transport
-            log.info('Peer: %r', self.session.peer)
+            log.debug('Peer: %r', self.session.peer)
             # Process the client's requests.
             self._handler_coroutine = self.loop.create_task(
                 self._handle_client())
 
     def connection_lost(self, error: Optional[Exception]) -> None:
-        log.info('%r connection lost', self.session.peer)
+        log.debug('%r connection lost', self.session.peer)
         self._timeout_handle.cancel()
         # If STARTTLS was issued, then our transport is the SSL protocol
         # transport, and we need to close the original transport explicitly,
@@ -598,7 +598,7 @@ class SMTP(asyncio.StreamReaderProtocol):
             return status
 
     async def _handle_client(self):
-        log.info('%r handling connection', self.session.peer)
+        log.debug('%r handling connection', self.session.peer)
 
         if self._proxy_timeout is not None:
             self._reset_timeout(self._proxy_timeout)
@@ -650,7 +650,7 @@ class SMTP(asyncio.StreamReaderProtocol):
                 sanitized_log(log.debug, '_handle_client readline: %r', line)
                 # XXX this rstrip may not completely preserve old behavior.
                 line = line.rstrip(b'\r\n')
-                sanitized_log(log.info, '%r >> %r', self.session.peer, line)
+                sanitized_log(log.debug, '%r >> %r', self.session.peer, line)
                 if not line:
                     await self.push('500 Error: bad syntax')
                     continue
@@ -791,7 +791,7 @@ class SMTP(asyncio.StreamReaderProtocol):
         :return: True if AUTH is needed
         """
         if self._auth_required and not self.session.authenticated:
-            log.info(f'{caller_method}: Authentication required')
+            log.debug(f'{caller_method}: Authentication required')
             await self.push('530 5.7.0 Authentication required')
             return True
         return False

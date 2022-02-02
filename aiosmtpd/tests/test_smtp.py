@@ -1124,7 +1124,7 @@ class TestAuthMechanisms(_CommonMethods):
         assert len(interestings) == 2
         assert interestings[0][1] == logging.DEBUG
         assert interestings[0][2].endswith("b'AUTH PLAIN ********\\r\\n'")
-        assert interestings[1][1] == logging.INFO
+        assert interestings[1][1] == logging.DEBUG
         assert interestings[1][2].endswith("b'AUTH PLAIN ********'")
         assert_nopassleak(PW, caplog.record_tuples)
 
@@ -1953,7 +1953,7 @@ class TestAuthArgs:
         )
 
     def test_log_authmechanisms(self, caplog):
-        caplog.set_level(logging.INFO)
+        caplog.set_level(logging.DEBUG)
         server = Server(Sink())
         auth_mechs = sorted(
             m.replace("auth_", "") + "(builtin)"
