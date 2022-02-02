@@ -743,12 +743,12 @@ class SMTP(asyncio.StreamReaderProtocol):
                 # The connection got reset during the DATA command.
                 # XXX If handler method raises ConnectionResetError, we should
                 # verify that it was actually self._reader that was reset.
-                log.info('%r Connection lost during _handle_client()',
+                log.debug('%r Connection lost during _handle_client()',
                          self.session.peer)
                 self._writer.close()
                 raise
             except ConnectionResetError:
-                log.info('%r Connection lost during _handle_client()',
+                log.debug('%r Connection lost during _handle_client()',
                          self.session.peer)
                 self._writer.close()
                 raise
