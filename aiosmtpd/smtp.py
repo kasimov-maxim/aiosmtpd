@@ -536,7 +536,7 @@ class SMTP(asyncio.StreamReaderProtocol):
         self.transport = None
 
     def eof_received(self) -> bool:
-        log.info('%r EOF received', self.session.peer)
+        log.debug('%r EOF received', self.session.peer)
         self._handler_coroutine.cancel()
         if self.session.ssl is not None:
             # If STARTTLS was issued, return False, because True has no effect
@@ -553,7 +553,7 @@ class SMTP(asyncio.StreamReaderProtocol):
         )
 
     def _timeout_cb(self):
-        log.info('%r connection timeout', self.session.peer)
+        log.error('%r connection timeout', self.session.peer)
 
         # Calling close() on the transport will trigger connection_lost(),
         # which gracefully closes the SSL transport if required and cleans
@@ -605,14 +605,14 @@ class SMTP(asyncio.StreamReaderProtocol):
             log.debug("%r waiting PROXY handshake", self.session.peer)
             self.session.proxy_data = await get_proxy(self._reader)
             if self.session.proxy_data:
-                log.info("%r valid PROXY handshake", self.session.peer)
+                log.debug("%r valid PROXY handshake", self.session.peer)
                 status = await self._call_handler_hook("PROXY", self.session.proxy_data)
                 log.debug("%r handle_PROXY returned %r", self.session.peer, status)
             else:
                 log.warning("%r invalid PROXY handshake", self.session.peer)
                 status = False
             if status is MISSING or not status:
-                log.info("%r rejected by handle_PROXY", self.session.peer)
+                log.warning("%r rejected by handle_PROXY", self.session.peer)
                 self.transport.close()
                 return
             self._reset_timeout()
@@ -1284,7 +1284,7 @@ class SMTP(asyncio.StreamReaderProtocol):
             self.envelope.mail_from = address
             self.envelope.mail_options.extend(mail_options)
             status = '250 OK'
-        log.info('%r sender: %s', self.session.peer, address)
+        log.debug('%r sender: %s', self.session.peer, address)
         await self.push(status)
 
     @syntax('RCPT TO: <address>', extended=' [SP <mail-parameters>]')
@@ -1326,7 +1326,7 @@ class SMTP(asyncio.StreamReaderProtocol):
             self.envelope.rcpt_tos.append(address)
             self.envelope.rcpt_options.extend(rcpt_options)
             status = '250 OK'
-        log.info('%r recip: %s', self.session.peer, address)
+        log.debug('%r recip: %s', self.session.peer, address)
         await self.push(status)
 
     @syntax('RSET')
@@ -1371,7 +1371,7 @@ class SMTP(asyncio.StreamReaderProtocol):
                 assert line.endswith(b'\n')
             except asyncio.CancelledError:
                 # The connection got reset during the DATA command.
-                log.info('Connection lost during DATA')
+                log.debug('Connection lost during DATA')
                 self._writer.close()
                 raise
             except asyncio.LimitOverrunError as e:
