@@ -57,7 +57,9 @@ class _DataState(enum.Enum):
 
 
 AuthCallbackType = Callable[[str, bytes, bytes], bool]
-AuthenticatorType = Callable[["SMTP", "Session", "Envelope", str, Any], "AuthResult"]
+AuthenticatorType = Callable[
+    ["SMTP", "Session", "Envelope", str, Any], Awaitable["AuthResult"]
+]
 AuthMechanismType = Callable[["SMTP", List[str]], Awaitable[Any]]
 _TriStateType = Union[None, _Missing, bytes]
 
@@ -1045,11 +1047,11 @@ class SMTP(asyncio.StreamReaderProtocol):
             encode_to_b64=False,
         )
 
-    def _authenticate(self, mechanism: str, auth_data: Any) -> AuthResult:
+    async def _authenticate(self, mechanism: str, auth_data: Any) -> AuthResult:
         if self._authenticator is not None:
             # self.envelope is likely still empty, but we'll pass it anyways to
             # make the invocation similar to the one in _call_handler_hook
-            return self._authenticator(
+            return await self._authenticator(
                 self, self.session, self.envelope, mechanism, auth_data
             )
         else:
@@ -1104,7 +1106,7 @@ class SMTP(asyncio.StreamReaderProtocol):
         # Verify login data
         assert login is not None
         assert password is not None
-        return self._authenticate("PLAIN", LoginPassword(login, password))
+        return await self._authenticate("PLAIN", LoginPassword(login, password))
 
     async def auth_LOGIN(self, _, args: List[str]) -> AuthResult:
         login: _TriStateType
@@ -1128,7 +1130,7 @@ class SMTP(asyncio.StreamReaderProtocol):
             return AuthResult(success=False)
         assert password is not None
 
-        return self._authenticate("LOGIN", LoginPassword(login, password))
+        return await self._authenticate("LOGIN", LoginPassword(login, password))
 
     def _strip_command_keyword(self, keyword: str, arg: str) -> Optional[str]:
         keylen = len(keyword)
